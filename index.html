@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- 이 파일이 하는 일: 앱의 HTML 뼈대. 상단 바, 3화면 슬라이드, 하단 점 인디케이터 자리를 만든다. -->
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#79A5F0" />
+    <title>WEARCAST · 오늘 뭘 입을지</title>
+    <meta name="description" content="오늘 날씨 말고, 오늘 뭘 입을지 알려줘. 날씨·대기질 데이터로 옷차림과 준비물을 추천하는 웹앱" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <!-- 상단 바: 지역 버튼 + 로고 -->
+      <header class="topbar">
+        <button type="button" class="region-btn" id="region-btn" aria-label="지역 선택">
+          <span class="region-btn__icon" aria-hidden="true">☰</span>
+          <span class="region-btn__label" id="region-label">지역 선택</span>
+        </button>
+        <button type="button" class="demo-badge" id="demo-badge" hidden
+          aria-label="데모 데이터를 보는 중입니다. 눌러서 실제 날씨로 돌아가기">데모 데이터 ✕</button>
+        <span class="logo">WEARCAST</span>
+      </header>
+
+      <!-- 3화면 가로 스와이프 영역 -->
+      <main class="swiper screens" id="screens">
+        <div class="swiper-wrapper">
+          <section class="swiper-slide screen" id="screen-weather" aria-label="날씨"></section>
+          <section class="swiper-slide screen" id="screen-outfit" aria-label="옷차림"></section>
+          <section class="swiper-slide screen" id="screen-checklist" aria-label="준비물"></section>
+        </div>
+
+        <!-- PC용 이전/다음 버튼 (터치 기기에서는 CSS로 숨김) -->
+        <button type="button" class="nav-btn nav-btn--prev" id="nav-prev" aria-label="이전 화면">‹</button>
+        <button type="button" class="nav-btn nav-btn--next" id="nav-next" aria-label="다음 화면">›</button>
+      </main>
+
+      <!-- 하단 중앙 페이지 인디케이터 (점 3개) -->
+      <div class="pager swiper-pagination" id="pager"></div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

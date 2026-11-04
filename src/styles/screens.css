@@ -1,0 +1,958 @@
+/* 이 파일이 하는 일: 세 화면(WEATHER/OUTFIT/CHECKLIST)의 배치와 카드 스타일, 지역 선택 창 스타일. */
+
+.screen {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  /* 화면 내용이 길면 세로 스크롤 (가로 스와이프와 충돌하지 않음) */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.screen__inner {
+  width: 100%;
+  max-width: var(--column-max);
+  padding: 8px var(--gutter) 16px;
+  text-align: center;
+}
+
+.screen__tag {
+  margin: 32px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+
+.screen__title {
+  margin: 0 0 24px;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+.screen__placeholder {
+  margin: 0;
+  padding: 32px 20px;
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--card-radius);
+  background: var(--glass-bg);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ---- 공통: 글래스 카드 ---- */
+.card {
+  margin: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  /* backdrop-filter 미지원 환경용 대체 배경 (조금 더 불투명) */
+  background: var(--glass-bg-fallback);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .card {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+}
+
+.icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 로딩/오류/안내 카드 */
+.notice {
+  margin-top: 32px;
+  padding: 32px 20px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.notice--error p {
+  margin: 0 0 16px;
+}
+
+.retry-btn {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--on-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---- SCREEN 01 WEATHER ---- */
+.weather {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+  min-height: 100%;
+}
+
+/* 화면이 좁아도 카드가 눌려 잘리지 않게 한다 (대신 세로 스크롤) */
+.weather > * {
+  flex-shrink: 0;
+}
+
+/* 히어로: 남는 세로 공간을 차지하고 가운데 정렬 */
+.hero {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 0 16px;
+}
+
+.hero p {
+  margin: 0;
+}
+
+.hero__temp {
+  font-size: var(--temp-size);
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+  /* 숫자만 가운데 맞추고 ° 기호는 옆에 붙인다 */
+  padding-left: 0.12em;
+}
+
+.hero__temp--empty {
+  font-size: 32px;
+  font-weight: 400;
+}
+
+.hero__unit {
+  font-weight: 200;
+  letter-spacing: 0;
+}
+
+.hero__label {
+  margin-top: 4px !important;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.hero__range {
+  margin-top: 8px !important;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* 시간대 6칸 고정 그리드 (가로 스크롤 없음 -> 화면 스와이프와 충돌 없음) */
+.hourly {
+  padding: 16px 8px;
+}
+
+.hourly--empty {
+  color: var(--text-muted);
+}
+
+.hourly__grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hourly__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.hourly__time {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.hourly__cell:first-child .hourly__time {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.hourly__icon {
+  width: 30px;
+  height: 30px;
+}
+
+.hourly__pop {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-pop);
+}
+
+.hourly__temp {
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2x2 상세 카드 (얇은 구분선) */
+.details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  text-align: left;
+  overflow: hidden;
+}
+
+.detail {
+  min-width: 0;
+  padding: 16px;
+}
+
+.detail:nth-child(odd) {
+  border-right: 1px solid var(--divider);
+}
+
+.detail:nth-child(-n + 2) {
+  border-bottom: 1px solid var(--divider);
+}
+
+.detail p {
+  margin: 0;
+}
+
+.detail__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.detail__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.detail__value {
+  margin-top: 8px !important;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail__value small {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.detail__pm {
+  display: block;
+  font-size: 18px;
+}
+
+.detail__pm small {
+  display: inline-block;
+  min-width: 44px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.detail__sub {
+  margin-top: 4px !important;
+  font-size: 12px;
+  color: var(--text-muted);
+  word-break: keep-all;
+}
+
+/* 출처 표기 (Open-Meteo CC-BY 4.0) */
+.source {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ---- 지역 선택 창 ---- */
+.region-dialog {
+  /* 창은 항상 흰 바탕이므로 테마와 상관없이 짙은 글씨를 쓴다 */
+  --text: #0f2240;
+  --text-muted: rgba(15, 34, 64, 0.78);
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100dvh - 64px);
+  padding: 20px;
+  border: 0;
+  border-radius: var(--card-radius);
+  background: #fff;
+  color: var(--text);
+}
+
+.region-dialog::backdrop {
+  background: rgba(15, 34, 64, 0.4);
+}
+
+.region-dialog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.region-dialog__head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.region-dialog__close {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.region-dialog__geo,
+.region-dialog__row button,
+.region-dialog__list button {
+  min-height: 44px;
+  border: 1px solid rgba(15, 34, 64, 0.15);
+  border-radius: 12px;
+  background: #f3f6fb;
+  cursor: pointer;
+}
+
+.region-dialog__geo {
+  width: 100%;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.region-dialog__row {
+  display: flex;
+  gap: 8px;
+}
+
+.region-dialog__row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(15, 34, 64, 0.25);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 16px; /* iOS에서 확대되지 않도록 16px 이상 */
+}
+
+.region-dialog__row button {
+  padding: 0 16px;
+  font-weight: 600;
+}
+
+.region-dialog__hint,
+.region-dialog__msg {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.region-dialog__list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.region-dialog__list button {
+  width: 100%;
+  padding: 0 14px;
+  text-align: left;
+}
+
+/* ---- SCREEN 02 OUTFIT ---- */
+.outfit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--card-gap);
+}
+
+.outfit > * {
+  flex-shrink: 0;
+}
+
+/* 기준 칩 (ref5 필 버튼 스타일). 5-1단계에서 "· 변경" 버튼이 된다 */
+.basis-chip {
+  margin: 4px 0 0;
+  padding: 6px 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass-bg);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.outfit__title {
+  margin: 0;
+  font-size: 24px;
+}
+
+/* 아이템 패널: 모든 테마에서 같은 아이콘 색을 쓰도록 밝은 반투명 바탕 + 고정 짙은 색 */
+.outfit-panel {
+  width: 100%;
+  padding: 12px 16px 6px;
+  border-radius: var(--card-radius);
+  background: rgba(255, 255, 255, 0.85);
+  color: #0f2240;
+  box-shadow: 0 8px 24px rgba(15, 34, 64, 0.12);
+}
+
+.outfit-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.outfit-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 6px;
+}
+
+.outfit-item + .outfit-item {
+  padding-top: 6px;
+  border-top: 1px solid rgba(15, 34, 64, 0.08);
+}
+
+.outfit-item__icon {
+  width: var(--outfit-icon);
+  height: var(--outfit-icon);
+}
+
+.outfit-item__caption {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.outfit-item__slot {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(15, 34, 64, 0.72);
+}
+
+.outfit-item__name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.outfit-item__name small {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(15, 34, 64, 0.72);
+}
+
+/* 방한용품 줄 (맨 위) */
+.outfit-extras {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 34, 64, 0.08);
+}
+
+.outfit-extras__list {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.extra-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 34, 64, 0.06);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.extra-chip__icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* 추천 이유 카드 */
+.reason {
+  width: 100%;
+  padding: 16px 18px;
+  text-align: left;
+}
+
+.reason p {
+  margin: 0;
+}
+
+.reason__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.reason__label {
+  padding: 2px 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.reason__text {
+  margin-top: 8px !important;
+  font-size: 15px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.reason__facts {
+  margin-top: 8px !important;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 기준 칩을 버튼으로 쓸 때 (OUTFIT) */
+.basis-chip--button {
+  min-height: 36px;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.basis-chip__action {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ---- 하단 시트 (외출 시간대 선택) ---- */
+.sheet {
+  /* 시트는 항상 흰 바탕이므로 테마와 상관없이 짙은 글씨 */
+  --text: #0f2240;
+  --text-muted: rgba(15, 34, 64, 0.78);
+  width: min(var(--column-max), 100%);
+  max-width: 100%;
+  max-height: calc(100dvh - 48px);
+  margin: auto auto 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--card-radius) var(--card-radius) 0 0;
+  background: #fff;
+  color: var(--text);
+}
+
+.sheet::backdrop {
+  background: rgba(15, 34, 64, 0.4);
+}
+
+.sheet[open] {
+  animation: sheet-up 0.25s ease-out;
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.sheet__body {
+  padding: 20px var(--gutter) calc(20px + env(safe-area-inset-bottom));
+}
+
+.sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sheet__head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.sheet__close {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.sheet__hint,
+.sheet__note,
+.sheet__msg {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.sheet__msg {
+  color: #b42318;
+  font-weight: 600;
+}
+
+.sheet__msg:empty {
+  display: none;
+}
+
+.window-options {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.window-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(15, 34, 64, 0.15);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.window-option:has(input:checked) {
+  border-color: #0f2240;
+  background: #f3f6fb;
+}
+
+.window-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #0f2240;
+}
+
+.window-option__label {
+  flex: 1;
+  font-weight: 600;
+}
+
+.window-option__time {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.window-custom {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.window-custom label {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.window-custom span {
+  padding-bottom: 12px;
+}
+
+.window-custom select {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid rgba(15, 34, 64, 0.25);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* iOS 확대 방지 */
+}
+
+.sheet__apply {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #0f2240;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---- SCREEN 03 CHECKLIST ---- (ref4 리스트 카드: 아이콘 + 항목명 + 근거 + 우측 체크박스) */
+.check-panel {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--card-radius);
+  background: rgba(255, 255, 255, 0.85);
+  color: #0f2240;
+  box-shadow: 0 8px 24px rgba(15, 34, 64, 0.12);
+  text-align: left;
+}
+
+.check-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check-row + .check-row {
+  border-top: 1px solid rgba(15, 34, 64, 0.08);
+}
+
+.check-row__label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 4px;
+  cursor: pointer;
+}
+
+.check-row__icon {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  box-sizing: content-box;
+  border-radius: 14px;
+  background: rgba(15, 34, 64, 0.06);
+}
+
+.check-row__text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.check-row__name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.check-row__reason {
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(15, 34, 64, 0.75);
+  word-break: keep-all;
+}
+
+/* 실제 체크박스는 화면에서 감추고(접근성 유지), 동그란 표시를 대신 그린다 */
+.check-row__box {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.check-row__mark {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgba(15, 34, 64, 0.35);
+  border-radius: 50%;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.check-row__box:focus-visible + .check-row__mark {
+  outline: 2px solid #0f2240;
+  outline-offset: 2px;
+}
+
+.check-row.is-done .check-row__mark {
+  border-color: #0f2240;
+  background: #0f2240 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 16px no-repeat;
+}
+
+/* 완료: 취소선 + 흐려짐 */
+.check-row.is-done .check-row__name {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+.check-row.is-done .check-row__icon,
+.check-row.is-done .check-row__text {
+  opacity: 0.45;
+}
+
+/* 달성 현황 */
+.check-progress {
+  padding: 12px 4px 8px;
+  border-top: 1px solid rgba(15, 34, 64, 0.08);
+}
+
+.check-progress__text {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.check-progress__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(15, 34, 64, 0.1);
+  overflow: hidden;
+}
+
+.check-progress__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #0f2240;
+  transition: width 0.25s ease-out;
+}
+
+.check-empty {
+  margin: 0;
+  padding: 24px 8px;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.check-empty small {
+  font-weight: 400;
+  color: rgba(15, 34, 64, 0.72);
+}
+
+/* ---- 상태 카드 (로딩 / API 실패) ---- */
+.notice p {
+  margin: 0;
+}
+
+.notice__title {
+  font-weight: 700;
+}
+
+.notice__detail {
+  margin-top: 6px !important;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.notice__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.link-btn {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.spinner {
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 12px;
+  border: 3px solid var(--divider);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- 지역 창: 데모 데이터 선택 ---- */
+.region-dialog__demo {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(15, 34, 64, 0.1);
+}
+
+.region-dialog__demo summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demo-grid button {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid rgba(15, 34, 64, 0.15);
+  border-radius: 12px;
+  background: #fff8db;
+  color: #2b2100;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 출처 링크 */
+.source a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

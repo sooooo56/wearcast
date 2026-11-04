@@ -1,0 +1,359 @@
+/* 이 파일이 하는 일: 색과 크기 토큰(CSS 변수)과 날씨별 배경 테마, 배경 효과(햇빛/별/비/눈/번개/안개).
+   theme.js가 <html data-theme="..."> 값을 바꾸면 아래 변수 묶음이 바뀐다.
+   대비는 WCAG AA(일반 글씨 4.5:1) 이상이 되도록 계산해서 정했다 (배경 위/아래, 카드 위 모두). */
+
+/* 배경 그라디언트 색을 부드럽게 바꾸려면 변수를 "색"으로 등록해야 한다 (미지원 브라우저는 즉시 전환) */
+@property --bg-top {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #b3e0ff;
+}
+
+@property --bg-bottom {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #5ea8ff;
+}
+
+:root {
+  /* 공통 크기 */
+  --gutter: 20px;
+  --card-gap: 12px;
+  --card-radius: 24px;
+  --temp-size: clamp(96px, 30vw, 160px);
+  --outfit-icon: clamp(48px, 7vh, 84px); /* OUTFIT 아이콘 (초안 72~96px, 화면 높이에 맞춰 줄어듦) */
+  --column-max: 480px; /* PC에서도 모바일 폭 칼럼으로 보여줌 */
+
+  /* 기본 = 맑음 낮. ref2(#ABCDFA -> #79A5F0)보다 밝고 채도를 높였다 (2026-11-04 사용자 피드백) */
+  --bg-top: #b3e0ff;
+  --bg-bottom: #5ea8ff;
+  --text: #0f2240;
+  --text-muted: rgba(15, 34, 64, 0.86);
+  --text-pop: #0c3f9e; /* 강수확률 강조색 */
+  --on-text: #ffffff; /* --text 색 버튼 위의 글씨 */
+  --glass-bg: rgba(255, 255, 255, 0.2);
+  --glass-bg-fallback: rgba(255, 255, 255, 0.36);
+  --glass-border: rgba(255, 255, 255, 0.32);
+  --divider: rgba(15, 34, 64, 0.12);
+  /* 배경 효과 색 */
+  --fx-cloud: rgba(255, 255, 255, 0.55);
+  --fx-glow: rgba(255, 248, 222, 0.95);
+  --fx-ray: rgba(255, 252, 235, 0.28);
+  --fx-particle: rgba(255, 255, 255, 0.7);
+
+  /* 배경 색이 바뀔 때 부드럽게 */
+  transition: --bg-top 0.6s, --bg-bottom 0.6s;
+}
+
+:root.theme-instant {
+  transition: none;
+}
+
+/* 밝은 배경 + 짙은 글씨 공통 */
+:root[data-theme='clear-day'],
+:root[data-theme='cloudy'],
+:root[data-theme='snow'],
+:root[data-theme='fog'] {
+  --text: #0f2240;
+  --on-text: #ffffff;
+  --divider: rgba(15, 34, 64, 0.12);
+}
+
+/* 어두운 배경 + 밝은 글씨 공통 */
+:root[data-theme='clear-night'],
+:root[data-theme='cloudy-night'],
+:root[data-theme='fog-night'],
+:root[data-theme='rain'],
+:root[data-theme='thunder'] {
+  --text: #f4f7fb;
+  --text-muted: rgba(244, 247, 251, 0.82);
+  --text-pop: #bcd5ff;
+  --on-text: #0f2240;
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-fallback: rgba(255, 255, 255, 0.16);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --divider: rgba(255, 255, 255, 0.14);
+}
+
+/* 맑음 + 밤: 어두운 네이비, 별빛 (레퍼런스 없음, 직접 설계) */
+:root[data-theme='clear-night'] {
+  --bg-top: #0b1530;
+  --bg-bottom: #22345e;
+  --text-muted: rgba(244, 247, 251, 0.8);
+  --fx-particle: rgba(255, 255, 255, 0.85);
+  --fx-cloud: rgba(170, 190, 230, 0.12);
+}
+
+/* 흐림: 회색빛 블루 (ref1에서 샘플링) */
+:root[data-theme='cloudy'] {
+  --bg-top: #84a6c1;
+  --bg-bottom: #a3bdd4;
+  --text-muted: rgba(15, 34, 64, 0.84);
+  --text-pop: #173f73;
+  --glass-bg: rgba(255, 255, 255, 0.18);
+  --glass-bg-fallback: rgba(255, 255, 255, 0.34);
+  --glass-border: rgba(255, 255, 255, 0.28);
+  --fx-cloud: rgba(255, 255, 255, 0.4);
+}
+
+/* 흐림 + 밤: 같은 회색빛 블루 톤의 어두운 버전 (2026-11-04 사용자 결정) */
+:root[data-theme='cloudy-night'] {
+  --bg-top: #1c2635;
+  --bg-bottom: #334256;
+  --fx-cloud: rgba(120, 140, 165, 0.18);
+}
+
+/* 비: 흐림과 같은 저채도 톤에서 명도만 낮춤 (짙은 블루) */
+:root[data-theme='rain'] {
+  --bg-top: #2f4860;
+  --bg-bottom: #3f5870;
+  --text-muted: rgba(244, 247, 251, 0.9);
+  --glass-bg: rgba(255, 255, 255, 0.07);
+  --fx-cloud: rgba(20, 32, 46, 0.35);
+  --fx-particle: rgba(210, 228, 245, 0.6);
+}
+
+/* 눈: 연한 블루/화이트 (레퍼런스 없음, 직접 설계) */
+:root[data-theme='snow'] {
+  --bg-top: #e3ecf5;
+  --bg-bottom: #b8cbe0;
+  --text-muted: rgba(15, 34, 64, 0.8);
+  --text-pop: #1d4a85;
+  --glass-bg: rgba(255, 255, 255, 0.3);
+  --glass-bg-fallback: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --fx-cloud: rgba(255, 255, 255, 0.5);
+  --fx-particle: #ffffff;
+}
+
+/* 천둥번개: 어두운 하늘, 번개 (레퍼런스 없음, 직접 설계) */
+:root[data-theme='thunder'] {
+  --bg-top: #1d2131;
+  --bg-bottom: #363d55;
+  --text-muted: rgba(244, 247, 251, 0.8);
+  --fx-cloud: rgba(10, 12, 20, 0.4);
+  --fx-particle: rgba(200, 210, 235, 0.5);
+}
+
+/* 안개: 부드러운 회색 (레퍼런스 없음, 직접 설계) */
+:root[data-theme='fog'] {
+  --bg-top: #cfd4d9;
+  --bg-bottom: #a8b1ba;
+  --text-muted: rgba(15, 34, 64, 0.82);
+  --text-pop: #22406a;
+  --glass-bg: rgba(255, 255, 255, 0.22);
+  --glass-bg-fallback: rgba(255, 255, 255, 0.38);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --fx-cloud: rgba(255, 255, 255, 0.45);
+}
+
+/* 안개 + 밤: 어두운 회색 (2026-11-04 사용자 결정) */
+:root[data-theme='fog-night'] {
+  --bg-top: #262b33;
+  --bg-bottom: #434a55;
+  --fx-cloud: rgba(170, 178, 190, 0.16);
+}
+
+/* ---- 배경 효과 레이어 (theme.js가 .sky 안에 요소를 만든다) ----
+   텍스트 뒤에 깔리는 장식이며, 대비를 해치지 않도록 흐리고 옅게 둔다.
+   화면을 넘기면 --sky-p(0~1)에 따라 배경이 살짝 따라 움직인다 (main.js). */
+.sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sky__layer {
+  position: absolute;
+  inset: 0 -40px;
+  transform: translateX(calc(var(--sky-p, 0) * -40px));
+  transition: transform 0.35s ease-out;
+}
+
+/* 블러 처리한 구름 덩어리 */
+.sky__cloud {
+  position: absolute;
+  width: 70vmax;
+  height: 30vmax;
+  border-radius: 50%;
+  background: var(--fx-cloud);
+  filter: blur(48px);
+  animation: sky-drift 60s ease-in-out infinite alternate;
+}
+
+.sky__cloud:nth-of-type(1) { top: -8%; left: -30%; }
+.sky__cloud:nth-of-type(2) { top: 18%; right: -40%; animation-duration: 80s; animation-delay: -20s; }
+.sky__cloud:nth-of-type(3) { bottom: 4%; left: -20%; animation-duration: 70s; animation-delay: -35s; }
+
+/* ---- 맑은 낮: 해가 비치는 효과 ----
+   오른쪽 위의 햇무리가 천천히 숨 쉬듯 밝아지고, 옅은 햇살이 아주 느리게 돈다. */
+.sky__sun {
+  position: absolute;
+  top: -22vmax;
+  right: -22vmax;
+  width: 70vmax;
+  height: 70vmax;
+}
+
+.sky__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--fx-glow) 0%, rgba(255, 248, 222, 0.5) 22%, transparent 62%);
+  animation: sky-pulse 7s ease-in-out infinite alternate;
+}
+
+.sky__rays {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, var(--fx-ray) 0deg 5deg, transparent 5deg 18deg);
+  /* 가운데는 진하고 바깥으로 갈수록 사라지게 */
+  -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 58%);
+  mask-image: radial-gradient(circle, #000 8%, transparent 58%);
+  animation: sky-spin 140s linear infinite;
+}
+
+/* 햇살이 화면을 비스듬히 천천히 지나가는 옅은 빛줄기 */
+.sky__beam {
+  position: absolute;
+  top: -20%;
+  left: -60%;
+  width: 60%;
+  height: 140%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: rotate(18deg);
+  animation: sky-beam 14s ease-in-out infinite;
+}
+
+/* 별, 빗방울, 눈송이 */
+.sky__p {
+  position: absolute;
+  top: var(--y, 0);
+  left: var(--x, 0);
+}
+
+.sky--stars .sky__p {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--fx-particle);
+  animation: sky-twinkle var(--d, 4s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+
+/* 빗줄기: 위는 투명, 아래로 갈수록 진한 가는 선이 비스듬히 떨어진다 */
+.sky--rain .sky__p {
+  top: -12%;
+  width: 1.5px;
+  height: 72px;
+  border-radius: 2px;
+  background: linear-gradient(transparent, var(--fx-particle));
+  animation: sky-rain var(--d, 1s) linear var(--delay, 0s) infinite;
+}
+
+/* 눈송이: 크기가 조금씩 다르고 좌우로 살랑이며 내려온다 */
+.sky--snow .sky__p {
+  top: -4%;
+  width: var(--s, 6px);
+  height: var(--s, 6px);
+  border-radius: 50%;
+  background: var(--fx-particle);
+  box-shadow: 0 0 6px rgba(70, 100, 140, 0.35);
+  animation: sky-snow var(--d, 12s) linear var(--delay, 0s) infinite;
+}
+
+/* 번개: 가끔 아주 짧게 밝아진다 (빠른 연속 깜빡임 없음) */
+.sky__flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(220, 228, 255, 0.5);
+  opacity: 0;
+  animation: sky-flash 9s ease-out infinite;
+}
+
+/* 안개: 옅은 가로 띠가 천천히 흐른다 */
+.sky__band {
+  position: absolute;
+  left: -50%;
+  width: 200%;
+  height: 22%;
+  background: var(--fx-cloud);
+  filter: blur(36px);
+  animation: sky-drift 50s ease-in-out infinite alternate;
+}
+
+.sky__band:nth-of-type(1) { top: 10%; }
+.sky__band:nth-of-type(2) { top: 45%; animation-duration: 70s; animation-delay: -25s; }
+.sky__band:nth-of-type(3) { top: 78%; animation-duration: 60s; animation-delay: -40s; }
+
+@keyframes sky-drift {
+  from { transform: translateX(-4%); }
+  to { transform: translateX(6%); }
+}
+
+@keyframes sky-pulse {
+  from { opacity: 0.75; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes sky-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes sky-beam {
+  0%, 15% { transform: translateX(0) rotate(18deg); opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 1; }
+  85%, 100% { transform: translateX(320%) rotate(18deg); opacity: 0; }
+}
+
+@keyframes sky-twinkle {
+  from { opacity: 0.25; }
+  to { opacity: 1; }
+}
+
+@keyframes sky-rain {
+  from { transform: translate(0, 0) rotate(12deg); }
+  to { transform: translate(-26vh, 120vh) rotate(12deg); }
+}
+
+@keyframes sky-snow {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(14px, 28vh); }
+  50% { transform: translate(-10px, 56vh); }
+  75% { transform: translate(12px, 84vh); }
+  100% { transform: translate(0, 112vh); }
+}
+
+@keyframes sky-flash {
+  0%, 90%, 100% { opacity: 0; }
+  91% { opacity: 1; }
+  93% { opacity: 0.2; }
+  94% { opacity: 0.7; }
+}
+
+/* 움직임 줄이기 설정: 모든 효과를 멈춘다. 떨어지는 입자, 번개, 지나가는 빛줄기는 아예 숨긴다 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition: none;
+  }
+
+  .sky *,
+  .sky {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .sky__layer {
+    transform: none;
+  }
+
+  .sky--rain .sky__p,
+  .sky--snow .sky__p,
+  .sky__flash,
+  .sky__beam {
+    display: none;
+  }
+}

@@ -1,0 +1,4 @@
+# 줄바꿈을 LF로 통일 (Windows/Mac/Vercel 어디서나 같은 파일)
+* text=auto eol=lf
+*.woff2 binary
+*.png binary
