@@ -160,20 +160,45 @@
   color: var(--text-muted);
 }
 
-/* 시간대 6칸 고정 그리드 (가로 스크롤 없음 -> 화면 스와이프와 충돌 없음) */
+/* 시간대 24칸: 옆으로 밀어서 이후 시간을 본다. 이 줄 위에서는 swiper-no-swiping으로 화면 전환과 분리 */
 .hourly {
-  padding: 16px 8px;
+  padding: 16px 0;
+  overflow: hidden;
 }
 
 .hourly--empty {
+  padding: 16px;
   color: var(--text-muted);
 }
 
+.hourly__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain; /* 끝까지 밀어도 브라우저 뒤로가기/새로고침이 먹히지 않게 */
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  cursor: grab;
+  /* 양쪽 끝이 흐려져서 더 있다는 것을 알려준다 */
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+
+.hourly__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.hourly__scroll.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
 .hourly__grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  display: flex;
+  width: max-content;
   margin: 0;
-  padding: 0;
+  padding: 0 12px;
   list-style: none;
 }
 
@@ -181,8 +206,23 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex: none;
   gap: 6px;
-  min-width: 0;
+  width: 54px;
+  scroll-snap-align: start;
+}
+
+/* 날짜가 바뀌는 칸(내일 0시): 왼쪽에 얇은 구분선 */
+.hourly__cell.is-day-break {
+  margin-left: 6px;
+  padding-left: 6px;
+  width: 60px;
+  border-left: 1px solid var(--divider);
+}
+
+.hourly__cell.is-day-break .hourly__time {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .hourly__time {

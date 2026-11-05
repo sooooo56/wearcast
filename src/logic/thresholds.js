@@ -6,7 +6,7 @@ export const DEFAULT_WINDOW = { startHour: 8, endHour: 19 };
 export const MIN_WINDOW_HOURS = 1;
 
 // ---- WEATHER 화면 ----
-export const HOURLY_GRID_CELLS = 6; // 시간대 그리드 칸 수 (현재 시각부터)
+export const HOURLY_CELLS = 24; // 시간대 카드에 보여줄 시간 수 (현재 시각부터, 옆으로 밀어서 확인)
 
 // 자외선 지수 단계 (WHO UV Index 기준: 0-2 낮음, 3-5 보통, 6-7 높음, 8-10 매우 높음, 11+ 위험)
 export const UV_LEVELS = [

@@ -1,10 +1,10 @@
 // 이 파일이 하는 일: SCREEN 01 WEATHER 화면을 그린다.
 // 항상 "지금" 기준(current.time)이다. 내일 기준 추천과 상관없이 현재 날씨를 보여준다.
-// 순서: 히어로(기온 -> 날씨 라벨 -> 최고/최저 · 체감) -> 시간대 6칸 -> 2x2 상세 카드 -> 출처
+// 순서: 히어로(기온 -> 날씨 라벨 -> 최고/최저 · 체감) -> 시간대 24칸(옆으로 밀어서 확인) -> 2x2 상세 카드 -> 출처
 
 import { retry } from '../state.js';
 import { describeWeather } from '../data/weatherCodes.js';
-import { UV_LEVELS, HOURLY_GRID_CELLS } from '../logic/thresholds.js';
+import { UV_LEVELS, HOURLY_CELLS } from '../logic/thresholds.js';
 import { icon } from './icons.js';
 import { statusCard } from './statusCards.js';
 import { sourceLine } from './attribution.js';
@@ -42,9 +42,14 @@ export function pickWeatherView(state) {
 
   const hours = [];
   if (hi >= 0) {
-    for (let i = hi; i < Math.min(hi + HOURLY_GRID_CELLS, h.time.length); i += 1) {
+    const today = c.time.slice(0, 10);
+    for (let i = hi; i < Math.min(hi + HOURLY_CELLS, h.time.length); i += 1) {
+      const hour = hourOf(h.time[i]);
+      // 자정(0시)에는 날짜가 바뀐 것을 "내일"로 알려준다 (예보가 2일치라 모레는 없음)
+      const isNextDay = h.time[i].slice(0, 10) !== today;
       hours.push({
-        label: i === hi ? '지금' : `${hourOf(h.time[i])}시`,
+        label: i === hi ? '지금' : isNextDay && hour === 0 ? '내일' : `${hour}시`,
+        isDayBreak: i !== hi && isNextDay && hour === 0,
         weather: describeWeather(h.weather_code[i], h.is_day?.[i]),
         pop: at(h.precipitation_probability, i),
         temp: at(h.temperature_2m, i),
@@ -86,7 +91,7 @@ function renderHourly(hours) {
   const cells = hours
     .map(
       (hr) => `
-      <li class="hourly__cell">
+      <li class="hourly__cell${hr.isDayBreak ? ' is-day-break' : ''}">
         <span class="hourly__time">${hr.label}</span>
         ${hr.weather ? icon(hr.weather.icon, 'icon hourly__icon') : '<span class="hourly__icon hourly__icon--none"></span>'}
         <span class="sr-only">${hr.weather ? hr.weather.label : `날씨 ${NO_DATA}`}</span>
@@ -96,10 +101,40 @@ function renderHourly(hours) {
     )
     .join('');
   return `
-    <section class="card hourly" aria-label="시간별 예보">
-      <ol class="hourly__grid">${cells}</ol>
+    <section class="card hourly" aria-label="시간별 예보 (옆으로 밀어서 이후 시간 확인)">
+      <!-- swiper-no-swiping: 이 줄 위에서는 화면 전환 대신 시간대가 옆으로 움직인다 -->
+      <div class="hourly__scroll swiper-no-swiping" tabindex="0" role="group" aria-label="시간별 예보, 좌우로 스크롤">
+        <ol class="hourly__grid">${cells}</ol>
+      </div>
     </section>
   `;
+}
+
+// 마우스(PC)로도 끌어서 옆으로 넘길 수 있게 한다 (터치는 브라우저 기본 스크롤을 쓴다)
+function enableDragScroll(el) {
+  let startX = 0;
+  let startLeft = 0;
+  let dragging = false;
+
+  el.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    dragging = true;
+    startX = e.clientX;
+    startLeft = el.scrollLeft;
+    el.setPointerCapture(e.pointerId); // 요소 밖으로 나가도 계속 따라온다
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    if (Math.abs(dx) > 3) el.classList.add('is-dragging');
+    el.scrollLeft = startLeft - dx;
+  });
+  const stop = () => {
+    dragging = false;
+    el.classList.remove('is-dragging');
+  };
+  el.addEventListener('pointerup', stop);
+  el.addEventListener('pointercancel', stop);
 }
 
 function detail(iconName, title, value, sub) {
@@ -156,4 +191,6 @@ export function renderWeatherScreen(container, state) {
 
   container.innerHTML = `<div class="screen__inner weather">${body}</div>`;
   container.querySelector('[data-retry]')?.addEventListener('click', retry);
+  const strip = container.querySelector('.hourly__scroll');
+  if (strip) enableDragScroll(strip);
 }
