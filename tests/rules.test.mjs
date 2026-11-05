@@ -300,3 +300,24 @@ test('체크 저장: 항목 ID별 저장이라 체크 해제/다른 항목과 �
   setCheck('2026-11-05', 'a', 'sunscreen', false, st);
   assert.deepEqual(loadChecks('2026-11-05', 'a', st), { umbrella: true });
 });
+
+// ---- 5) 날씨 효과 강도 (배경 비/눈의 양) ----
+import { intensityOf, describeWeather } from '../src/data/weatherCodes.js';
+
+test('강도: 가랑비/약한 눈은 light, 폭우/폭설/우박 천둥은 heavy, 나머지는 normal', () => {
+  for (const c of [51, 53, 61, 71, 80, 85]) assert.equal(intensityOf(c), 'light', `code ${c}`);
+  for (const c of [65, 75, 82, 86, 96, 99]) assert.equal(intensityOf(c), 'heavy', `code ${c}`);
+  for (const c of [63, 73, 81, 95, 0, 3, 45]) assert.equal(intensityOf(c), 'normal', `code ${c}`);
+});
+
+test('데모 시나리오의 날씨 코드가 의도한 테마/강도로 이어진다', () => {
+  const themeOf = (key) => {
+    const demo = makeDemoWeather(key);
+    const c = demo.forecast.current;
+    return { theme: describeWeather(c.weather_code, c.is_day).theme, intensity: intensityOf(c.weather_code) };
+  };
+  assert.deepEqual(themeOf('drizzle'), { theme: 'rain', intensity: 'light' });
+  assert.deepEqual(themeOf('heavy-rain'), { theme: 'rain', intensity: 'heavy' });
+  assert.deepEqual(themeOf('heavy-snow'), { theme: 'snow', intensity: 'heavy' });
+  assert.equal(themeOf('chilly-windy').theme, 'cloudy'); // 쌀쌀+강풍은 맑은 배경이 아니다
+});

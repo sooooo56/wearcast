@@ -21,6 +21,16 @@ TABLE.forEach(([codes, label, dayIcon, nightIcon, theme]) => {
   codes.forEach((code) => BY_CODE.set(code, { label, dayIcon, nightIcon, theme }));
 });
 
+// 비/눈 강도: WMO 코드의 세기 구분 (slight / moderate / heavy). 배경 효과의 입자 수와 속도를 정한다
+const LIGHT_CODES = new Set([51, 53, 56, 61, 71, 77, 80, 85]);
+const HEAVY_CODES = new Set([65, 67, 75, 82, 86, 96, 99]);
+
+export function intensityOf(code) {
+  if (LIGHT_CODES.has(code)) return 'light';
+  if (HEAVY_CODES.has(code)) return 'heavy';
+  return 'normal';
+}
+
 function themeFor(base, day) {
   if (base === 'clear') return day ? 'clear-day' : 'clear-night';
   if (base === 'cloudy' || base === 'fog') return day ? base : `${base}-night`;

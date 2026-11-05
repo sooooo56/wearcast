@@ -17,6 +17,24 @@ export const UV_LEVELS = [
   { min: 0, label: '낮음' },
 ];
 
+// ---- WEATHER 상세 카드 시각화 (막대/게이지) ----
+export const UV_SCALE_MAX = 11; // 자외선 막대의 오른쪽 끝 (11+ 위험)
+export const WIND_SCALE_MAX = 15; // 풍속 막대의 오른쪽 끝 (m/s)
+// 미세먼지 등급 (에어코리아 예보 등급표, 2026-11-04 확인). max는 그 등급의 상한(㎍/㎥), 마지막은 상한 없음
+// 주의: 공식 등급은 일평균 기준이고 앱은 지금 시각의 모델 예측값에 같은 구간을 적용해 "참고"로만 보여준다
+export const PM10_BANDS = [
+  { max: 30, label: '좋음' },
+  { max: 80, label: '보통' },
+  { max: 150, label: '나쁨' },
+  { max: Infinity, label: '매우 나쁨' },
+];
+export const PM25_BANDS = [
+  { max: 15, label: '좋음' },
+  { max: 35, label: '보통' },
+  { max: 75, label: '나쁨' },
+  { max: Infinity, label: '매우 나쁨' },
+];
+
 // ---- 기본 옷차림 (체감온도 구간) ----
 // 위에서부터 차례로 보고 "체감온도 >= min"인 첫 구간을 쓴다.
 // 상의/하의는 체감 최저·최고의 중간값, 아우터는 체감 최저값으로 고른다.

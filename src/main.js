@@ -15,6 +15,7 @@ import './styles/screens.css';
 
 import { weatherState, subscribe, loadRegion, loadDemo, clearData, setOutingWindow, fetchCount } from './state.js';
 import { applyThemeFromState, THEMES } from './ui/theme.js';
+import { strikeNow } from './ui/skyFx.js';
 import { DEMO_SCENARIOS } from './data/demoWeather.js';
 import { summarize } from './logic/summarize.js';
 import { recommendOutfit } from './logic/outfit.js';
@@ -208,5 +209,6 @@ window.wearcast = {
   fetchCount: () => fetchCount,
   demo: enterDemo,
   themes: THEMES,
+  strike: strikeNow,
   recommendation: () => lastResult,
 };

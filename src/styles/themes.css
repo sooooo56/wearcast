@@ -156,7 +156,9 @@
 
 /* ---- 배경 효과 레이어 (theme.js가 .sky 안에 요소를 만든다) ----
    텍스트 뒤에 깔리는 장식이며, 대비를 해치지 않도록 흐리고 옅게 둔다.
-   화면을 넘기면 --sky-p(0~1)에 따라 배경이 살짝 따라 움직인다 (main.js). */
+   - 구름: skyClouds.js가 그린 그림(img)을 천천히 흘려 보낸다
+   - 비/눈/별/번개: skyFx.js의 캔버스 (.sky__canvas)
+   화면을 넘기면 --sky-p(0~1)에 따라 뒤쪽 층이 살짝 따라 움직인다 (main.js). */
 .sky {
   position: absolute;
   inset: 0;
@@ -172,169 +174,110 @@
   transition: transform 0.35s ease-out;
 }
 
-/* 블러 처리한 구름 덩어리 */
-.sky__cloud {
+.sky__canvas {
   position: absolute;
-  width: 70vmax;
-  height: 30vmax;
-  border-radius: 50%;
-  background: var(--fx-cloud);
-  filter: blur(48px);
-  animation: sky-drift 60s ease-in-out infinite alternate;
+  inset: 0;
 }
 
-.sky__cloud:nth-of-type(1) { top: -8%; left: -30%; }
-.sky__cloud:nth-of-type(2) { top: 18%; right: -40%; animation-duration: 80s; animation-delay: -20s; }
-.sky__cloud:nth-of-type(3) { bottom: 4%; left: -20%; animation-duration: 70s; animation-delay: -35s; }
+/* 구름 한 장: 화면 왼쪽 밖에서 오른쪽 밖으로 천천히 흘러간다 */
+.sky__cloud-img {
+  position: absolute;
+  top: var(--y);
+  left: 0;
+  width: var(--w);
+  max-width: none;
+  height: auto;
+  opacity: var(--o, 1);
+  user-select: none;
+  will-change: transform;
+  animation: sky-cloud var(--dur, 300s) linear var(--delay, 0s) infinite;
+}
 
-/* ---- 맑은 낮: 해가 비치는 효과 ----
-   오른쪽 위의 햇무리가 천천히 숨 쉬듯 밝아지고, 옅은 햇살이 아주 느리게 돈다. */
+@keyframes sky-cloud {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100vw); }
+}
+
+/* 큰 구름: 화면 가운데에 놓고 좌우로 천천히 흔들린다 */
+.sky__cloud-img--sway {
+  left: calc((100vw - var(--w)) / 2);
+  animation: sky-cloud-sway var(--dur, 80s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+
+@keyframes sky-cloud-sway {
+  from { transform: translateX(-5vw); }
+  to { transform: translateX(5vw); }
+}
+
+/* 비/천둥: 위쪽 하늘을 어둡게 눌러서 구름이 무겁게 보이게 한다 */
+.sky--stormy::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 12, 22, 0.5) 0%, rgba(6, 12, 22, 0.18) 38%, transparent 62%);
+}
+
+/* 안개: 아래쪽이 뿌옇게 번진다 */
+.sky--hazy::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(255, 255, 255, 0.22) 100%);
+}
+
+:root[data-theme='fog-night'] .sky--hazy::after {
+  background: linear-gradient(180deg, transparent 30%, rgba(180, 188, 200, 0.12) 100%);
+}
+
+/* ---- 맑은 낮: 해 ----
+   오른쪽 위 모서리의 밝은 중심(core)과 넓게 번지는 햇무리(halo). 햇무리는 아주 천천히 숨 쉬듯 밝아진다. */
 .sky__sun {
   position: absolute;
-  top: -22vmax;
-  right: -22vmax;
-  width: 70vmax;
-  height: 70vmax;
+  top: -30vw;
+  right: -30vw;
+  width: 90vw;
+  height: 90vw;
 }
 
-.sky__glow {
+.sky__halo {
   position: absolute;
-  inset: 0;
+  inset: -20%;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--fx-glow) 0%, rgba(255, 248, 222, 0.5) 22%, transparent 62%);
-  animation: sky-pulse 7s ease-in-out infinite alternate;
+  background: radial-gradient(
+    circle,
+    rgba(255, 244, 205, 0.7) 0%,
+    rgba(255, 236, 176, 0.42) 18%,
+    rgba(255, 232, 170, 0.2) 34%,
+    rgba(255, 232, 170, 0.07) 50%,
+    transparent 66%
+  );
+  animation: sky-pulse 8s ease-in-out infinite alternate;
 }
 
-.sky__rays {
+.sky__core {
   position: absolute;
-  inset: -30%;
+  left: 50%;
+  top: 50%;
+  width: 34%;
+  height: 34%;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: repeating-conic-gradient(from 0deg, var(--fx-ray) 0deg 5deg, transparent 5deg 18deg);
-  /* 가운데는 진하고 바깥으로 갈수록 사라지게 */
-  -webkit-mask-image: radial-gradient(circle, #000 8%, transparent 58%);
-  mask-image: radial-gradient(circle, #000 8%, transparent 58%);
-  animation: sky-spin 140s linear infinite;
-}
-
-/* 햇살이 화면을 비스듬히 천천히 지나가는 옅은 빛줄기 */
-.sky__beam {
-  position: absolute;
-  top: -20%;
-  left: -60%;
-  width: 60%;
-  height: 140%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
-  transform: rotate(18deg);
-  animation: sky-beam 14s ease-in-out infinite;
-}
-
-/* 별, 빗방울, 눈송이 */
-.sky__p {
-  position: absolute;
-  top: var(--y, 0);
-  left: var(--x, 0);
-}
-
-.sky--stars .sky__p {
-  width: 2px;
-  height: 2px;
-  border-radius: 50%;
-  background: var(--fx-particle);
-  animation: sky-twinkle var(--d, 4s) ease-in-out var(--delay, 0s) infinite alternate;
-}
-
-/* 빗줄기: 위는 투명, 아래로 갈수록 진한 가는 선이 비스듬히 떨어진다 */
-.sky--rain .sky__p {
-  top: -12%;
-  width: 1.5px;
-  height: 72px;
-  border-radius: 2px;
-  background: linear-gradient(transparent, var(--fx-particle));
-  animation: sky-rain var(--d, 1s) linear var(--delay, 0s) infinite;
-}
-
-/* 눈송이: 크기가 조금씩 다르고 좌우로 살랑이며 내려온다 */
-.sky--snow .sky__p {
-  top: -4%;
-  width: var(--s, 6px);
-  height: var(--s, 6px);
-  border-radius: 50%;
-  background: var(--fx-particle);
-  box-shadow: 0 0 6px rgba(70, 100, 140, 0.35);
-  animation: sky-snow var(--d, 12s) linear var(--delay, 0s) infinite;
-}
-
-/* 번개: 가끔 아주 짧게 밝아진다 (빠른 연속 깜빡임 없음) */
-.sky__flash {
-  position: absolute;
-  inset: 0;
-  background: rgba(220, 228, 255, 0.5);
-  opacity: 0;
-  animation: sky-flash 9s ease-out infinite;
-}
-
-/* 안개: 옅은 가로 띠가 천천히 흐른다 */
-.sky__band {
-  position: absolute;
-  left: -50%;
-  width: 200%;
-  height: 22%;
-  background: var(--fx-cloud);
-  filter: blur(36px);
-  animation: sky-drift 50s ease-in-out infinite alternate;
-}
-
-.sky__band:nth-of-type(1) { top: 10%; }
-.sky__band:nth-of-type(2) { top: 45%; animation-duration: 70s; animation-delay: -25s; }
-.sky__band:nth-of-type(3) { top: 78%; animation-duration: 60s; animation-delay: -40s; }
-
-@keyframes sky-drift {
-  from { transform: translateX(-4%); }
-  to { transform: translateX(6%); }
+  background: radial-gradient(
+    circle,
+    #ffffff 0%,
+    rgba(255, 253, 240, 0.97) 24%,
+    rgba(255, 246, 208, 0.6) 50%,
+    rgba(255, 240, 190, 0.18) 72%,
+    transparent 100%
+  );
 }
 
 @keyframes sky-pulse {
-  from { opacity: 0.75; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1.04); }
+  from { opacity: 0.8; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1.03); }
 }
 
-@keyframes sky-spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes sky-beam {
-  0%, 15% { transform: translateX(0) rotate(18deg); opacity: 0; }
-  30% { opacity: 1; }
-  70% { opacity: 1; }
-  85%, 100% { transform: translateX(320%) rotate(18deg); opacity: 0; }
-}
-
-@keyframes sky-twinkle {
-  from { opacity: 0.25; }
-  to { opacity: 1; }
-}
-
-@keyframes sky-rain {
-  from { transform: translate(0, 0) rotate(12deg); }
-  to { transform: translate(-26vh, 120vh) rotate(12deg); }
-}
-
-@keyframes sky-snow {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(14px, 28vh); }
-  50% { transform: translate(-10px, 56vh); }
-  75% { transform: translate(12px, 84vh); }
-  100% { transform: translate(0, 112vh); }
-}
-
-@keyframes sky-flash {
-  0%, 90%, 100% { opacity: 0; }
-  91% { opacity: 1; }
-  93% { opacity: 0.2; }
-  94% { opacity: 0.7; }
-}
-
-/* 움직임 줄이기 설정: 모든 효과를 멈춘다. 떨어지는 입자, 번개, 지나가는 빛줄기는 아예 숨긴다 */
+/* 움직임 줄이기 설정: 구름과 해의 움직임을 모두 멈춘다 (캔버스 효과는 skyFx.js가 직접 멈춘다) */
 @media (prefers-reduced-motion: reduce) {
   :root {
     transition: none;
@@ -350,10 +293,11 @@
     transform: none;
   }
 
-  .sky--rain .sky__p,
-  .sky--snow .sky__p,
-  .sky__flash,
-  .sky__beam {
-    display: none;
+  .sky__cloud-img {
+    transform: translateX(10vw);
+  }
+
+  .sky__cloud-img--sway {
+    transform: none;
   }
 }

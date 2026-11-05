@@ -10,11 +10,14 @@ export const DEMO_SCENARIOS = {
   'cloudy-night': { label: '흐림 (밤)', code: 3, hour: 21, temp: 13, feelsGap: -2, range: 6, pop: 20, rain: 0, snow: 0, wind: 3.0, uv: 0, pm10: 40, pm25: 20, dust: 6 },
   fog: { label: '안개', code: 45, hour: 7, temp: 9, feelsGap: -1, range: 7, pop: 10, rain: 0, snow: 0, wind: 1.2, uv: 0.4, pm10: 96, pm25: 48, dust: 35 },
   'fog-night': { label: '안개 (밤)', code: 45, hour: 4, temp: 7, feelsGap: -1, range: 7, pop: 10, rain: 0, snow: 0, wind: 0.9, uv: 0, pm10: 60, pm25: 33, dust: 10 },
+  drizzle: { label: '가랑비', code: 53, hour: 10, temp: 15, feelsGap: -1, range: 4, pop: 70, rain: 0.4, snow: 0, wind: 2.2, uv: 1, pm10: 20, pm25: 10, dust: 2 },
+  'heavy-rain': { label: '폭우', code: 82, hour: 15, temp: 19, feelsGap: -2, range: 4, pop: 100, rain: 9, snow: 0, wind: 9.5, uv: 0.8, pm10: 14, pm25: 7, dust: 1 },
+  'heavy-snow': { label: '눈보라', code: 75, hour: 9, temp: -6, feelsGap: -8, range: 4, pop: 90, rain: 0.5, snow: 2.4, wind: 8, uv: 0.8, pm10: 18, pm25: 9, dust: 1 },
   rain: { label: '비', code: 63, hour: 15, temp: 14, feelsGap: -3, range: 4, pop: 90, rain: 2.4, snow: 0, wind: 5.6, uv: 1.2, pm10: 18, pm25: 9, dust: 2 },
   snow: { label: '눈', code: 73, hour: 9, temp: -3, feelsGap: -5, range: 5, pop: 80, rain: 0.6, snow: 0.8, wind: 3.9, uv: 1.5, pm10: 22, pm25: 11, dust: 2 },
   thunder: { label: '천둥번개', code: 95, hour: 17, temp: 24, feelsGap: 2, range: 6, pop: 85, rain: 6.5, snow: 0, wind: 7.8, uv: 2.4, pm10: 25, pm25: 12, dust: 3 },
-  'chilly-windy': { label: '쌀쌀 + 강풍', code: 1, hour: 8, temp: 16, feelsGap: -3, range: 8, pop: 10, rain: 0, snow: 0, wind: 8.5, uv: 3.4, pm10: 30, pm25: 13, dust: 4 },
-  dust: { label: '미세먼지 나쁨', code: 1, hour: 10, temp: 20, feelsGap: 0, range: 9, pop: 0, rain: 0, snow: 0, wind: 1.8, uv: 5.2, pm10: 120, pm25: 55, dust: 95 },
+  'chilly-windy': { label: '쌀쌀 + 강풍', code: 3, hour: 8, temp: 16, feelsGap: -3, range: 8, pop: 10, rain: 0, snow: 0, wind: 8.5, uv: 3.4, pm10: 30, pm25: 13, dust: 4 },
+  dust: { label: '미세먼지 나쁨', code: 3, hour: 10, temp: 20, feelsGap: 0, range: 9, pop: 0, rain: 0, snow: 0, wind: 1.8, uv: 5.2, pm10: 120, pm25: 55, dust: 95 },
 };
 
 // 서울 기준 오늘 날짜 "YYYY-MM-DD"
@@ -87,6 +90,7 @@ export function makeDemoWeather(key) {
       apparent_temperature: hourly.apparent_temperature[nowIndex],
       weather_code: s.code,
       wind_speed_10m: s.wind,
+      wind_direction_10m: 315, // 데모는 북서풍 고정
       is_day: isDayArr[nowIndex],
     },
     currentUnits: { temperature_2m: '°C', apparent_temperature: '°C', wind_speed_10m: 'm/s' },

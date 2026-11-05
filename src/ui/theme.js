@@ -1,65 +1,49 @@
 // 이 파일이 하는 일: 현재 날씨 코드로 배경 테마를 정하고, <html data-theme>와 배경 효과 레이어(.sky)를 바꾼다.
 // 세 화면이 같은 테마를 쓴다. 테마는 항상 "지금" 날씨 기준이다 (내일 기준 추천과 무관).
+// 효과 구성: 구름/해(skyClouds.js, CSS로 천천히 흐름) + 비/눈/별/번개(skyFx.js, 캔버스).
+// 비/눈의 양은 날씨 코드의 강도(가랑비~폭우)를, 기울기와 구름 속도는 풍속을 따른다.
 
-import { describeWeather } from '../data/weatherCodes.js';
+import { describeWeather, intensityOf } from '../data/weatherCodes.js';
+import { cloudsHtml, sunHtml } from './skyClouds.js';
+import { setSkyFx } from './skyFx.js';
 
 export const THEMES = ['clear-day', 'clear-night', 'cloudy', 'cloudy-night', 'rain', 'snow', 'thunder', 'fog', 'fog-night'];
 const DEFAULT_THEME = 'clear-day';
 
-// 입자 수는 적게 (CLAUDE.md 5-1: 비/눈 효과는 절제)
-const PARTICLE_COUNT = { stars: 28, rain: 22, snow: 22 };
+const WIND_FULL_MS = 12; // 이 풍속(m/s) 이상이면 바람 효과를 최대로
 
-// 새로고침해도 같은 배치가 나오도록 고정된 의사 난수
-function seeded(i, salt) {
-  const x = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-function particles(kind, count) {
-  return Array.from({ length: count }, (_, i) => {
-    const x = (seeded(i, 1) * 100).toFixed(1);
-    const y = kind === 'stars' ? (seeded(i, 2) * 70).toFixed(1) : '0';
-    const delay = (-seeded(i, 3) * (kind === 'snow' ? 14 : kind === 'rain' ? 1.2 : 4)).toFixed(2);
-    const dur =
-      kind === 'snow' ? 9 + seeded(i, 4) * 7 : kind === 'rain' ? 0.8 + seeded(i, 4) * 0.5 : 3 + seeded(i, 4) * 4;
-    const size = kind === 'snow' ? `--s:${(4 + seeded(i, 5) * 5).toFixed(1)}px;` : '';
-    return `<span class="sky__p" style="--x:${x}%;--y:${y}%;--delay:${delay}s;--d:${dur.toFixed(2)}s;${size}"></span>`;
-  }).join('');
-}
-
-// 구름/안개 띠는 <i>로 만든다 (CSS의 nth-of-type 위치 지정이 다른 요소와 섞이지 않게)
-const clouds = (n) => '<i class="sky__cloud"></i>'.repeat(n);
-const bands = (n) => '<i class="sky__band"></i>'.repeat(n);
 // 화면을 넘길 때 살짝 따라 움직이는 뒤쪽 층
 const layer = (html) => `<div class="sky__layer">${html}</div>`;
 
-const SUN = '<div class="sky__sun"><div class="sky__rays"></div><div class="sky__glow"></div></div><div class="sky__beam"></div>';
-
-// 테마별 배경 효과 HTML
+// 테마별 효과: html(구름/해/안개 등), fx(캔버스 효과 종류), cls(추가 클래스)
 const SKY = {
-  'clear-day': () => ({ cls: '', html: layer(`${SUN}${clouds(2)}`) }),
-  'clear-night': () => ({ cls: 'sky--stars', html: layer(`${particles('stars', PARTICLE_COUNT.stars)}${clouds(1)}`) }),
-  cloudy: () => ({ cls: '', html: layer(clouds(3)) }),
-  'cloudy-night': () => ({ cls: '', html: layer(clouds(3)) }),
-  rain: () => ({ cls: 'sky--rain', html: `${layer(clouds(2))}${particles('rain', PARTICLE_COUNT.rain)}` }),
-  snow: () => ({ cls: 'sky--snow', html: `${layer(clouds(2))}${particles('snow', PARTICLE_COUNT.snow)}` }),
-  thunder: () => ({
-    cls: 'sky--rain',
-    html: `${layer(clouds(3))}${particles('rain', PARTICLE_COUNT.rain)}<div class="sky__flash"></div>`,
-  }),
-  fog: () => ({ cls: '', html: layer(bands(3)) }),
-  'fog-night': () => ({ cls: '', html: layer(bands(3)) }),
+  'clear-day': (o) => ({ cls: '', fx: null, html: layer(`${sunHtml()}${cloudsHtml('clear-day', o.wind)}`) }),
+  'clear-night': (o) => ({ cls: '', fx: 'stars', html: layer(cloudsHtml('clear-night', o.wind)) }),
+  cloudy: (o) => ({ cls: '', fx: null, html: layer(cloudsHtml('cloudy', o.wind)) }),
+  'cloudy-night': (o) => ({ cls: '', fx: null, html: layer(cloudsHtml('cloudy-night', o.wind)) }),
+  rain: (o) => ({ cls: 'sky--stormy', fx: 'rain', html: layer(cloudsHtml('rain', o.wind)) }),
+  snow: (o) => ({ cls: '', fx: 'snow', html: layer(cloudsHtml('snow', o.wind)) }),
+  thunder: (o) => ({ cls: 'sky--stormy', fx: 'thunder', html: layer(cloudsHtml('thunder', o.wind)) }),
+  fog: (o) => ({ cls: 'sky--hazy', fx: null, html: layer(cloudsHtml('fog', o.wind)) }),
+  'fog-night': (o) => ({ cls: 'sky--hazy', fx: null, html: layer(cloudsHtml('fog-night', o.wind)) }),
 };
 
 let skyEl = null;
-let current = null;
+let currentKey = null; // 테마 + 강도 + 바람 세기. 하나라도 바뀌면 효과를 다시 만든다
+let currentName = null;
 
-// 테마 이름을 직접 적용한다
-export function applyTheme(theme) {
+// 테마 이름을 직접 적용한다. opts: { intensity: 'light'|'normal'|'heavy', wind: 0~1 }
+export function applyTheme(theme, opts = {}) {
   const name = THEMES.includes(theme) ? theme : DEFAULT_THEME;
-  if (name === current) return;
-  const isFirst = current === null;
-  current = name;
+  const intensity = opts.intensity ?? 'normal';
+  const wind = Math.round((opts.wind ?? 0) * 4) / 4; // 0, .25, .5, .75, 1 단위로 묶어서 자잘한 변화에 다시 만들지 않음
+  const key = `${name}|${intensity}|${wind}`;
+  if (key === currentKey) return;
+
+  const isFirst = currentName === null;
+  const themeChanged = name !== currentName;
+  currentKey = key;
+  currentName = name;
 
   const root = document.documentElement;
   // 처음 적용할 때는 색 전환 애니메이션 없이 바로 바꾼다 (기본 파랑이 잠깐 보이지 않게)
@@ -75,13 +59,16 @@ export function applyTheme(theme) {
     skyEl.setAttribute('aria-hidden', 'true');
     document.getElementById('app').prepend(skyEl);
   }
-  const { cls, html } = SKY[name]();
+  const { cls, html, fx } = SKY[name]({ wind, intensity });
   skyEl.className = `sky ${cls}`.trim();
-  skyEl.innerHTML = html;
+  skyEl.innerHTML = html; // 캔버스도 지워지므로 아래에서 다시 만든다
+  setSkyFx(skyEl, fx, { intensity, wind });
 
-  // 모바일 브라우저 상단 바 색도 맞춘다
-  const top = getComputedStyle(document.documentElement).getPropertyValue('--bg-top').trim();
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', top);
+  // 모바일 브라우저 상단 바 색도 맞춘다 (테마가 바뀐 경우만)
+  if (themeChanged) {
+    const top = getComputedStyle(document.documentElement).getPropertyValue('--bg-top').trim();
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', top);
+  }
 }
 
 // weatherState에서 테마를 골라 적용한다. 데이터가 없으면(로딩/오류) 지금 테마를 유지한다.
@@ -89,13 +76,14 @@ export function applyTheme(theme) {
 export function applyThemeFromState(state) {
   const c = state.forecast?.current;
   if (state.status !== 'ready' || !c) {
-    if (!current && state.status === 'error') applyTheme(DEFAULT_THEME);
+    if (!currentName && state.status === 'error') applyTheme(DEFAULT_THEME);
     return;
   }
   const info = describeWeather(c.weather_code, c.is_day);
-  applyTheme(info ? info.theme : DEFAULT_THEME);
+  const wind = Number.isFinite(c.wind_speed_10m) ? Math.min(1, Math.max(0, c.wind_speed_10m / WIND_FULL_MS)) : 0;
+  applyTheme(info ? info.theme : DEFAULT_THEME, { intensity: intensityOf(c.weather_code), wind });
 }
 
 export function currentTheme() {
-  return current;
+  return currentName;
 }
