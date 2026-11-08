@@ -184,6 +184,8 @@ GET https://air-quality-api.open-meteo.com/v1/air-quality
   &forecast_days=2        # 내일 시간대 포함 여부를 첫 호출 응답에서 확인
 ```
 
+**지역 검색 (2026-11-08 점검)** 지오코딩 API만 쓰면 주요 시 85곳 중 19곳이 한글로 안 나오고, 같은 이름의 마을(대전 -> 전라남도 마을), 북한 지명, 영문 이름, 동 구역이 섞인다. 그래서 `data/koreaCities.js`(주요 시 85곳 + 서울 구 등)를 먼저 찾고, 없을 때만 API를 `countryCode=KR`로 부른다. API 결과는 시청/군청 소재지나 인구 3만 이상만 남기고, 큰 곳이 있으면 마을은 숨긴다(없을 때만 "(마을)"로 표시). 규칙은 `api/geocode.js`의 `rankApiResults`, 테스트는 `tests/geocode.test.mjs`.
+
 **구현 전에 반드시 확인할 것 (아직 공식 문서로 직접 확인하지 못함)**
 - open-meteo.com 공식 문서에서 위 변수명과 파라미터(`wind_speed_unit=ms`, 지오코딩 `language=ko`)가 실제로 유효한지 대조한다. 첫 호출 응답의 `hourly_units`/`current_units`로 단위를 확인한다.
 - 대기질 데이터는 지상 측정소 실측이 아니라 모델 예측값일 가능성이 높다. 화면에 "예측 기반 참고값"과 출처를 표기한다.

@@ -53,7 +53,12 @@ export function getCurrentLocation() {
   });
 }
 
+// 목록에 보이는 이름: "수원시 · 경기도". 작은 마을은 소속과 "(마을)"을 붙여서 큰 도시와 헷갈리지 않게 한다
 function regionLabel(r) {
+  if (r.small) {
+    const where = [r.admin1, r.admin2].filter(Boolean).join(' ');
+    return `${r.name} · ${where} (마을)`;
+  }
   return [r.name, r.admin1 && r.admin1 !== r.name ? r.admin1 : null, r.countryCode !== 'KR' ? r.country : null]
     .filter(Boolean)
     .join(' · ');
@@ -71,10 +76,10 @@ export function createRegionPicker({ onSelect, onDemo }) {
       </div>
       <button type="button" class="region-dialog__geo" data-geo>📍 현재 위치 사용</button>
       <div class="region-dialog__row">
-        <input type="search" name="q" placeholder="예: 서울, 부산, 수원" autocomplete="off" required />
+        <input type="search" name="q" placeholder="예: 대전, 용인, 강남구" autocomplete="off" required />
         <button type="submit">검색</button>
       </div>
-      <p class="region-dialog__hint">시·도 단위로 검색해 주세요. 구/동 이름(예: 강남구)은 검색되지 않습니다.</p>
+      <p class="region-dialog__hint">시·군·구 이름으로 검색해 주세요 (예: 대전, 용인, 강남구). 서울의 구는 대부분 되지만, 다른 도시의 구와 동은 검색되지 않을 수 있어요. 그럴 땐 "현재 위치 사용"을 눌러 주세요.</p>
       <p class="region-dialog__msg" role="status" aria-live="polite"></p>
       <ul class="region-dialog__list"></ul>
     </form>
@@ -126,7 +131,13 @@ export function createRegionPicker({ onSelect, onDemo }) {
     msg.textContent = '검색 중...';
     try {
       const results = await searchRegions(input.value);
-      msg.textContent = results.length ? '' : '검색 결과가 없습니다. 시·도 이름으로 다시 검색해 주세요.';
+      if (!results.length) {
+        msg.textContent = '검색 결과가 없습니다. 시·군·구 이름으로 다시 검색하거나, 구/동은 해당 시 이름으로 검색해 보세요. "현재 위치 사용"도 됩니다.';
+      } else if (results.some((r) => r.small)) {
+        msg.textContent = '정확한 시·군 이름이 아니면 작은 마을이 나올 수 있어요.';
+      } else {
+        msg.textContent = '';
+      }
       results.forEach((r) => {
         const li = document.createElement('li');
         const btn = document.createElement('button');
