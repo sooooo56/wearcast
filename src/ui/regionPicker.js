@@ -99,6 +99,7 @@ export function createRegionPicker({ onSelect, onDemo }) {
   const input = dialog.querySelector('input');
   const msg = dialog.querySelector('.region-dialog__msg');
   const list = dialog.querySelector('.region-dialog__list');
+  let searchSeq = 0;
 
   function choose(region) {
     saveRegion(region);
@@ -129,8 +130,10 @@ export function createRegionPicker({ onSelect, onDemo }) {
     e.preventDefault();
     list.innerHTML = '';
     msg.textContent = '검색 중...';
+    const mine = ++searchSeq;
     try {
       const results = await searchRegions(input.value);
+      if (mine !== searchSeq) return; // 그 사이 더 새로운 검색이 시작됐으면 오래된 결과는 버린다
       if (!results.length) {
         msg.textContent = '검색 결과가 없습니다. 시·군·구 이름으로 다시 검색하거나, 구/동은 해당 시 이름으로 검색해 보세요. "현재 위치 사용"도 됩니다.';
       } else if (results.some((r) => r.small)) {
@@ -148,6 +151,7 @@ export function createRegionPicker({ onSelect, onDemo }) {
         list.appendChild(li);
       });
     } catch (err) {
+      if (mine !== searchSeq) return;
       msg.textContent = `검색에 실패했습니다. ${err.message}`;
     }
   });
