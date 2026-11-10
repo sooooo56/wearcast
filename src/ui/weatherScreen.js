@@ -1,10 +1,11 @@
 // 이 파일이 하는 일: SCREEN 01 WEATHER 화면을 그린다.
 // 항상 "지금" 기준(current.time)이다. 내일 기준 추천과 상관없이 현재 날씨를 보여준다.
-// 순서: 히어로(기온 -> 날씨 라벨 -> 최고/최저 · 체감) -> 시간대 24칸(옆으로 밀어서 확인) -> 2x2 상세 카드 -> 출처
+// 순서(애플 날씨 앱의 구조 참고): 히어로(지역명 -> 기온 -> 날씨 라벨 -> 최고/최저)
+//   -> 시간대 24칸(옆으로 밀어서 확인) -> 미세먼지(넓은 타일) -> 낱개 타일 2열(체감/자외선/바람/강수) -> 출처
 
 import { retry } from '../state.js';
 import { describeWeather } from '../data/weatherCodes.js';
-import { UV_LEVELS, HOURLY_CELLS } from '../logic/thresholds.js';
+import { UV_LEVELS, HOURLY_CELLS, HOURLY_POP_SHOW_MIN } from '../logic/thresholds.js';
 import { icon } from './icons.js';
 import { statusCard } from './statusCards.js';
 import { sourceLine } from './attribution.js';
@@ -15,6 +16,9 @@ const NO_DATA = '정보 없음';
 const has = (v) => v !== null && v !== undefined && !Number.isNaN(v);
 const round = (v) => (has(v) ? Math.round(v) : null);
 const deg = (v) => (has(v) ? `${Math.round(v)}°` : NO_DATA);
+
+// 지역 이름은 검색 결과에서 오므로 HTML에 넣기 전에 특수문자를 바꾼다
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
 
 // 소수 한 자리까지, 끝의 .0은 뺀다 (1.43 -> 1.4, 2.0 -> 2)
 const oneDecimal = (v) => (has(v) ? String(Math.round(v * 10) / 10) : null);
@@ -59,6 +63,7 @@ export function pickWeatherView(state) {
   }
 
   return {
+    place: state.region?.name ?? null,
     time: c.time,
     temp: c.temperature_2m ?? null,
     feels: c.apparent_temperature ?? null,
@@ -87,11 +92,18 @@ function renderHero(v) {
   const tempText = has(v.temp) ? `${round(v.temp)}<span class="hero__unit">°</span>` : NO_DATA;
   return `
     <section class="hero" aria-label="현재 날씨">
+      ${v.place ? `<p class="hero__place">${escapeHtml(v.place)}</p>` : ''}
       <p class="hero__temp${has(v.temp) ? '' : ' hero__temp--empty'}">${tempText}</p>
       <p class="hero__label">${v.weather ? v.weather.label : NO_DATA}</p>
-      <p class="hero__range">최고 ${deg(v.max)} / 최저 ${deg(v.min)} · 체감 ${deg(v.feels)}</p>
+      <p class="hero__range">최고 ${deg(v.max)} · 최저 ${deg(v.min)}</p>
     </section>
   `;
+}
+
+// 시간대 칸의 강수확률: 낮으면 자리를 비워 두고(줄 높이는 유지), 값이 없으면 "정보 없음"
+function popCell(pop) {
+  if (!has(pop)) return NO_DATA;
+  return pop >= HOURLY_POP_SHOW_MIN ? `${pop}%` : '';
 }
 
 function renderHourly(hours) {
@@ -103,13 +115,15 @@ function renderHourly(hours) {
         <span class="hourly__time">${hr.label}</span>
         ${hr.weather ? icon(hr.weather.icon, 'icon hourly__icon') : '<span class="hourly__icon hourly__icon--none"></span>'}
         <span class="sr-only">${hr.weather ? hr.weather.label : `날씨 ${NO_DATA}`}</span>
-        <span class="hourly__pop">${has(hr.pop) ? `${hr.pop}%` : NO_DATA}</span>
+        <span class="hourly__pop">${popCell(hr.pop)}</span>
         <span class="hourly__temp">${deg(hr.temp)}</span>
       </li>`,
     )
     .join('');
+  // 24시간 내내 보여줄 강수확률이 없으면 그 줄을 통째로 뺀다 (빈 줄이 남지 않게)
+  const dry = hours.every((hr) => popCell(hr.pop) === '');
   return `
-    <section class="card hourly" aria-label="시간별 예보 (옆으로 밀어서 이후 시간 확인)">
+    <section class="card hourly${dry ? ' hourly--dry' : ''}" aria-label="시간별 예보 (옆으로 밀어서 이후 시간 확인)">
       <h2 class="card__head">${icon('clock', 'icon card__head-icon')}시간별 예보<span class="card__head-hint">옆으로 밀어서 보기</span></h2>
       <!-- swiper-no-swiping: 이 줄 위에서는 화면 전환 대신 시간대가 옆으로 움직인다 -->
       <div class="hourly__scroll swiper-no-swiping" tabindex="0" role="group" aria-label="시간별 예보, 좌우로 스크롤">
@@ -179,10 +193,18 @@ function enableDragScroll(el) {
   el.addEventListener('touchstart', stopInertia, { passive: true });
 }
 
-// 상세 카드 한 칸: 제목 -> 값 -> (막대) -> 보조 설명. extra는 오른쪽 위에 놓이는 작은 그림(나침반)
-function detail(iconName, title, value, sub, gauge = '', extra = '') {
+// 체감온도 타일의 설명: 화면에 보이는 반올림 값끼리 비교한다 (숫자와 문장이 어긋나지 않게)
+function feelsNote(feels, temp) {
+  if (!has(feels) || !has(temp)) return 'Open-Meteo 모델 계산값';
+  const diff = Math.round(feels) - Math.round(temp);
+  if (diff === 0) return '실제 기온과 비슷해요';
+  return `실제 기온보다 ${Math.abs(diff)}° ${diff > 0 ? '높게' : '낮게'} 느껴져요`;
+}
+
+// 타일 한 장: 제목 -> 값 -> (막대) -> 보조 설명. extra는 오른쪽 위에 놓이는 작은 그림(나침반), wide는 두 칸 폭
+function detail(iconName, title, value, sub, gauge = '', extra = '', wide = false) {
   return `
-    <div class="detail">
+    <div class="card detail${wide ? ' detail--wide' : ''}">
       <p class="detail__title">${icon(iconName, 'icon detail__icon')}${title}</p>
       <div class="detail__main">
         <p class="detail__value">${value}</p>
@@ -201,13 +223,17 @@ function renderDetails(v) {
     ? `${grade.label} <small>${grade.name}</small>`
     : NO_DATA;
   const pmSub = grade
-    ? `PM10 ${has(v.pm10) ? round(v.pm10) : NO_DATA} · PM2.5 ${has(v.pm25) ? round(v.pm25) : NO_DATA}<br />㎍/㎥ · 예측 기반 참고값`
+    ? `PM10 ${has(v.pm10) ? round(v.pm10) : NO_DATA} · PM2.5 ${has(v.pm25) ? round(v.pm25) : NO_DATA} ㎍/㎥ · 예측 기반 참고값`
     : '예측 기반 참고값';
   const dirLabel = windDirectionLabel(v.windDir);
   const windSub = dirLabel ? `${dirLabel}풍 · 현재` : has(v.windDir) ? '현재' : `풍향 ${NO_DATA}`;
 
   return `
-    <section class="card details" aria-label="상세 날씨">
+    <section class="details" aria-label="상세 날씨">
+      ${detail('face-mask', '미세먼지', pmText, pmSub, pmGauge(grade), '', true)}
+      ${detail('thermometer', '체감 온도', deg(v.feels), feelsNote(v.feels, v.temp))}
+      ${detail('sun', '자외선 지수', uvText, has(v.uvMax) ? `오늘 최고 ${oneDecimal(v.uvMax)}` : `오늘 최고 ${NO_DATA}`, uvGauge(v.uv))}
+      ${detail('wind', '바람', has(v.wind) ? `${oneDecimal(v.wind)}<small> m/s</small>` : NO_DATA, windSub, windGauge(v.wind), compass(v.windDir))}
       ${detail(
         'umbrella',
         '강수확률',
@@ -215,9 +241,6 @@ function renderDetails(v) {
         has(v.precipSum) ? `오늘 강수량 ${oneDecimal(v.precipSum)}mm` : `오늘 강수량 ${NO_DATA}`,
         popGauge(v.pop),
       )}
-      ${detail('wind', '풍속', has(v.wind) ? `${oneDecimal(v.wind)}<small> m/s</small>` : NO_DATA, windSub, windGauge(v.wind), compass(v.windDir))}
-      ${detail('sun', '자외선 지수', uvText, has(v.uvMax) ? `오늘 최고 ${oneDecimal(v.uvMax)}` : `오늘 최고 ${NO_DATA}`, uvGauge(v.uv))}
-      ${detail('face-mask', '미세먼지', pmText, pmSub, pmGauge(grade))}
     </section>
   `;
 }

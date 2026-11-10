@@ -147,6 +147,22 @@
   letter-spacing: 0;
 }
 
+/* 지역명: 기온 위에 크게 (길면 말줄임) */
+.hero__place {
+  margin-bottom: 2px !important;
+  overflow: hidden;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 지역명이 히어로에 보이는 동안에는 상단 버튼의 지역명을 감춰 두 번 나오지 않게 한다 (:has 미지원이면 그대로 둘 다 보임) */
+.app:has(#screen-weather.swiper-slide-active .hero__place) .region-btn__label {
+  display: none;
+}
+
 .hero__label {
   margin-top: 4px !important;
   font-size: 22px;
@@ -240,9 +256,15 @@
 }
 
 .hourly__pop {
+  min-height: 15px; /* 숫자를 감춘 칸도 줄 높이를 지켜서 기온 줄이 맞게 */
   font-size: 12px;
+  line-height: 15px;
   font-weight: 600;
   color: var(--text-pop);
+}
+
+.hourly--dry .hourly__pop {
+  display: none;
 }
 
 .hourly__temp {
@@ -251,25 +273,31 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 2x2 상세 카드 (얇은 구분선) */
+/* 상세 타일: 낱개 글래스 카드를 2열로 놓는다 (애플 날씨의 타일 배치 참고). 넓은 타일은 두 칸을 쓴다 */
 .details {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: var(--card-gap);
   text-align: left;
-  overflow: hidden;
 }
 
 .detail {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  padding: 16px;
+  min-height: 148px;
+  padding: 14px 16px 16px;
 }
 
-.detail:nth-child(odd) {
-  border-right: 1px solid var(--divider);
+.detail--wide {
+  grid-column: 1 / -1;
+  min-height: 0;
 }
 
-.detail:nth-child(-n + 2) {
-  border-bottom: 1px solid var(--divider);
+/* 보조 설명은 타일 아래쪽에 붙인다 (타일마다 내용 길이가 달라도 줄이 맞게) */
+.detail .detail__sub {
+  margin-top: auto !important;
+  padding-top: 10px;
 }
 
 .detail p {
@@ -292,8 +320,8 @@
 
 .detail__value {
   margin-top: 8px !important;
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 30px;
+  font-weight: 500;
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
@@ -1013,6 +1041,7 @@
   margin-bottom: calc(var(--card-gap) * -1);
   display: flex;
   justify-content: center;
+  align-items: flex-start; /* 높이 0인 줄에 맞춰 알약이 납작해지지 않게 */
   pointer-events: none;
 }
 
@@ -1148,6 +1177,6 @@
   }
 
   .detail__value {
-    font-size: 22px;
+    font-size: 26px;
   }
 }

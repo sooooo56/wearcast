@@ -230,50 +230,69 @@
 }
 
 /* ---- 맑은 낮: 해 ----
-   오른쪽 위 모서리의 밝은 중심(core)과 넓게 번지는 햇무리(halo). 햇무리는 아주 천천히 숨 쉬듯 밝아진다. */
-.sky__sun {
+   윤곽이 보이는 동그라미가 아니라 "빛"으로 그린다. 파란 하늘 위에 노란색을 얹으면 회색으로 탁해지므로 거의 흰색을 쓴다.
+   - wash: 오른쪽 위에서 하늘 전체로 번지는 옅은 빛
+   - halo: 넓은 햇무리 (아주 천천히 숨 쉬듯 밝아진다)
+   - core: 하얗게 날아간 중심. 가장자리가 끊기지 않고 햇무리로 이어진다
+   크기는 화면 폭을 따르되 PC의 넓은 창에서 지나치게 커지지 않게 상한을 둔다. */
+.sky__wash {
   position: absolute;
-  top: -30vw;
-  right: -30vw;
-  width: 90vw;
-  height: 90vw;
+  inset: 0;
+  background: radial-gradient(
+    120% 70% at 100% 0%,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0.16) 30%,
+    rgba(255, 255, 255, 0.05) 58%,
+    transparent 80%
+  );
+}
+
+.sky__sun {
+  --sun: min(130vw, 640px);
+  position: absolute;
+  top: calc(var(--sun) * -0.42);
+  right: calc(var(--sun) * -0.36);
+  width: var(--sun);
+  height: var(--sun);
 }
 
 .sky__halo {
   position: absolute;
-  inset: -20%;
+  inset: 0;
   border-radius: 50%;
   background: radial-gradient(
-    circle,
-    rgba(255, 244, 205, 0.7) 0%,
-    rgba(255, 236, 176, 0.42) 18%,
-    rgba(255, 232, 170, 0.2) 34%,
-    rgba(255, 232, 170, 0.07) 50%,
-    transparent 66%
+    circle closest-side,
+    rgba(255, 253, 244, 0.6) 0%,
+    rgba(255, 252, 240, 0.38) 14%,
+    rgba(255, 251, 236, 0.2) 30%,
+    rgba(255, 250, 232, 0.09) 50%,
+    rgba(255, 250, 232, 0.03) 72%,
+    transparent 100%
   );
-  animation: sky-pulse 8s ease-in-out infinite alternate;
+  animation: sky-pulse 9s ease-in-out infinite alternate;
 }
 
 .sky__core {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 34%;
-  height: 34%;
+  width: 30%;
+  height: 30%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: radial-gradient(
-    circle,
+    circle closest-side,
     #ffffff 0%,
-    rgba(255, 253, 240, 0.97) 24%,
-    rgba(255, 246, 208, 0.6) 50%,
-    rgba(255, 240, 190, 0.18) 72%,
+    rgba(255, 255, 255, 0.96) 22%,
+    rgba(255, 254, 246, 0.7) 40%,
+    rgba(255, 253, 240, 0.36) 58%,
+    rgba(255, 252, 236, 0.14) 78%,
     transparent 100%
   );
 }
 
 @keyframes sky-pulse {
-  from { opacity: 0.8; transform: scale(0.97); }
+  from { opacity: 0.82; transform: scale(0.98); }
   to { opacity: 1; transform: scale(1.03); }
 }
 

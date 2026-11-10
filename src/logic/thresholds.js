@@ -7,6 +7,7 @@ export const MIN_WINDOW_HOURS = 1;
 
 // ---- WEATHER 화면 ----
 export const HOURLY_CELLS = 24; // 시간대 카드에 보여줄 시간 수 (현재 시각부터, 옆으로 밀어서 확인)
+export const HOURLY_POP_SHOW_MIN = 10; // 시간대 칸에서 강수확률(%)이 이 값 이상일 때만 숫자를 보여준다 (0%가 줄줄이 나오지 않게)
 
 // 자외선 지수 단계 (WHO UV Index 기준: 0-2 낮음, 3-5 보통, 6-7 높음, 8-10 매우 높음, 11+ 위험)
 export const UV_LEVELS = [

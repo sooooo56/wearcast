@@ -15,6 +15,7 @@ import wind from '@phosphor-icons/core/assets/light/wind-light.svg?raw';
 import faceMask from '@phosphor-icons/core/assets/light/face-mask-light.svg?raw';
 import list from '@phosphor-icons/core/assets/light/list-light.svg?raw';
 import clock from '@phosphor-icons/core/assets/light/clock-light.svg?raw';
+import thermometer from '@phosphor-icons/core/assets/light/thermometer-light.svg?raw';
 // 옷/준비물 (data/items.js에서 이름으로 참조)
 import coatHanger from '@phosphor-icons/core/assets/light/coat-hanger-light.svg?raw';
 import tShirt from '@phosphor-icons/core/assets/light/t-shirt-light.svg?raw';
@@ -41,6 +42,7 @@ const ICONS = {
   'face-mask': faceMask,
   list,
   clock,
+  thermometer,
   'coat-hanger': coatHanger,
   't-shirt': tShirt,
   'shirt-folded': shirtFolded,
